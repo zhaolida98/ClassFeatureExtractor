@@ -1,5 +1,7 @@
 package model;
 
+import static utils.Constant.SIGNIFICANCE_THRESHOLD;
+
 import com.google.gson.annotations.Expose;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -15,6 +17,7 @@ import utils.Java8Lexer;
 
 public class JMethod {
 
+  private final String[] CC_OPERATOR_LIST = {"if", "while", "for", "do", "switch"};
   @Expose
   private String name = "";
   @Expose
@@ -33,25 +36,42 @@ public class JMethod {
   private boolean isTest = false;
   private int start = -1;
   private int end = -1;
-  private final String[] CC_OPERATOR_LIST = {"if", "while", "for", "do", "switch"};
 
   public JMethod(String content) {
+    // remove comments
+    content = content.replaceAll("\\/\\/[^\\n]*(?:\\n|$)|\\/\\*(?:[^*]|\\*(?!\\/))*\\*\\/", "");
+    // remove annotations
+    content = content.replaceAll("@\\w+\\s*(?:\\([^()]*\\),*)?", "");
+    // normalize content, only single space
+    content = content.replaceAll("\\s+", " ");
     this.content = content;
+    getFuncNameParam(this.content);
+    calculateSha256(this.content);
+    calculateCyclomaticComplexity(this.content);
+    calculateHalsteadVolume(this.content);
+    calculateLineOfCode(this.content);
+    isTestFunction(this.content);
+    calculateMaintainabilityIndex();
   }
 
-  public static JMethod methodBuilder(String content) {
-    JMethod jm = new JMethod(content);
-    jm.getFuncNameParam(content);
-    jm.calculateSha256(content);
-    jm.calculateCyclomaticComplexity(content);
-    jm.calculateHalsteadVolume(content);
-    jm.calculateLineOfCode(content);
-    jm.isTestFunction(content);
-    jm.calculateMaintainabilityIndex();
-    return jm;
+  public JMethod(String content, String name) {
+    this.name = name;
+    // remove comments
+    content = content.replaceAll("\\/\\/[^\\n]*(?:\\n|$)|\\/\\*(?:[^*]|\\*(?!\\/))*\\*\\/", "");
+    // remove annotations
+    content = content.replaceAll("@\\w+\\s*(?:\\([^()]*\\),*)?", "");
+    // normalize content, only single space
+    content = content.replaceAll("\\s+", " ");
+    this.content = content;
+    calculateSha256(this.content);
+    calculateCyclomaticComplexity(this.content);
+    calculateHalsteadVolume(this.content);
+    calculateLineOfCode(this.content);
+    isTestFunction(this.content);
+    calculateMaintainabilityIndex();
   }
 
-  private String normalizeFunction(String content) {
+  private String getMethodBodyContent(String content) {
     content = content.substring(content.indexOf("{"), content.lastIndexOf("}"));
     content = content.replace(" ", "");
     content = content.replace(System.lineSeparator(), " ");
@@ -60,7 +80,7 @@ public class JMethod {
   }
 
   private void calculateSha256(String content) {
-    content = normalizeFunction(content);
+    content = getMethodBodyContent(content);
     this.sha256 = DigestUtils.sha256Hex(content);
   }
 
@@ -91,8 +111,7 @@ public class JMethod {
             token.getType() == Java8Lexer.StringLiteral) {
           operands.add(token.getText());
           uniqueOperands.add(token.getText());
-        }
-        else{
+        } else {
           operators.add(token.getText());
           uniqueOperators.add(token.getText());
         }
@@ -158,12 +177,16 @@ public class JMethod {
     String returnType = "";
     String funcName = "";
     funcName = functionHeaderList[functionHeaderList.length - 1].trim().toLowerCase();
-    if (functionHeaderList.length >  1) {
+    if (functionHeaderList.length > 1) {
       returnType = functionHeaderList[functionHeaderList.length - 2];
     }
 
     this.isTest = (funcName.startsWith("test") ||
         funcName.endsWith("test")) && returnType.equals("void");
+  }
+
+  public boolean isSignificant() {
+    return this.getMi() < SIGNIFICANCE_THRESHOLD;
   }
 
   public String getName() {
@@ -257,4 +280,5 @@ public class JMethod {
   public String toString() {
     return getName();
   }
+
 }

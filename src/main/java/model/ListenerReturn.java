@@ -1,6 +1,7 @@
 package model;
 
 public class ListenerReturn {
+
   String key;
   String value;
 
@@ -21,11 +22,7 @@ public class ListenerReturn {
     int e1 = Integer.parseInt(t1[1]);
     int s2 = Integer.parseInt(t2[0]);
     int e2 = Integer.parseInt(t2[1]);
-    if (s1 >= s2 && e1 <= e2) {
-      return true;
-    } else {
-      return false;
-    }
+    return s1 >= s2 && e1 <= e2;
   }
 
   public String getKey() {

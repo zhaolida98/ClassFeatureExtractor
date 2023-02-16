@@ -16,17 +16,12 @@ import utils.Java8ParserBaseListener;
  ***/
 public class ClassContentListener extends Java8ParserBaseListener {
 
-  Java8Parser parser;
   HashMap<String, String> classMap = new HashMap<>();
   HashMap<String, String> methodMap = new HashMap<>();
   HashMap<String, String> memberVarMap = new HashMap<>();
   HashMap<String, String> classMemberMap = new HashMap<>();
   HashMap<String, String> interfaceMap = new HashMap<>();
 
-
-  public ClassContentListener(Java8Parser parser) {
-    this.parser = parser;
-  }
 
   public ListenerReturn getCtx(ParserRuleContext ctx) {
     Token start = ctx.getStart();
@@ -45,35 +40,35 @@ public class ClassContentListener extends Java8ParserBaseListener {
     ListenerReturn listenerReturn = getCtx(ctx);
     classMap.put(listenerReturn.getKey(), listenerReturn.getValue());
 //    System.out.println("enterClassDeclaration");
-//    System.out.println(listenerReturn.getKey() + "\n" + listenerReturn.getValue());
+//    System.out.println(listenerReturn.getKey() + ":" + listenerReturn.getValue());
   }
 
   public void enterMethodDeclaration(Java8Parser.MethodDeclarationContext ctx) {
     ListenerReturn listenerReturn = getCtx(ctx);
     methodMap.put(listenerReturn.getKey(), listenerReturn.getValue());
 //    System.out.println("enterMethodDeclaration");
-//    System.out.println(listenerReturn.getKey() + "\n" + listenerReturn.getValue());
+//    System.out.println(listenerReturn.getKey() + ":" + listenerReturn.getValue());
   }
 
   public void enterInterfaceDeclaration(Java8Parser.InterfaceDeclarationContext ctx) {
     ListenerReturn listenerReturn = getCtx(ctx);
     interfaceMap.put(listenerReturn.getKey(), listenerReturn.getValue());
 //    System.out.println("InterfaceDeclaration");
-//    System.out.println(listenerReturn.getKey() + "\n" + listenerReturn.getValue());
+//    System.out.println(listenerReturn.getKey() + ":" + listenerReturn.getValue());
   }
 
   public void enterClassMemberDeclaration(Java8Parser.ClassMemberDeclarationContext ctx) {
     ListenerReturn listenerReturn = getCtx(ctx);
     classMemberMap.put(listenerReturn.getKey(), listenerReturn.getValue());
 //    System.out.println("ClassMemberDeclaration");
-//    System.out.println(listenerReturn.getKey() + "\n" + listenerReturn.getValue());
+//    System.out.println(listenerReturn.getKey() + ":" + listenerReturn.getValue());
   }
 
   public void enterVariableDeclaratorId(Java8Parser.VariableDeclaratorIdContext ctx) {
     ListenerReturn listenerReturn = getCtx(ctx);
     memberVarMap.put(listenerReturn.getKey(), listenerReturn.getValue());
 //    System.out.println("VariableDeclaratorId");
-//    System.out.println(listenerReturn.getKey() + "\n" + listenerReturn.getValue());
+//    System.out.println(listenerReturn.getKey() + ":" + listenerReturn.getValue());
   }
 
   public HashMap<String, String> getClassMap() {

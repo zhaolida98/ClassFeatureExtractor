@@ -1,5 +1,7 @@
 package model;
 
+import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.expr.SimpleName;
 import com.google.gson.annotations.Expose;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -11,6 +13,8 @@ import java.util.regex.Pattern;
 
 public class JClass {
 
+  int start = -1;
+  int end = -1;
   @Expose
   private String name = "";
   @Expose
@@ -26,19 +30,60 @@ public class JClass {
   private List<String> implement;
   private Map<String, String> classParameter;
 
-  int start = -1;
-  int end = -1;
-
   public JClass() {
+    init();
+  }
+
+  public JClass(String name) {
+    this.name = name;
+  }
+
+  public JClass(Node node) {
+    init();
+    for (Node child : node.getChildNodes()) {
+      if (child instanceof SimpleName) {
+        this.name = child.toString();
+      }
+    }
+  }
+
+  public static JClass classBuilder(String content) {
+    JClass cck = new JClass();
+    String classDefHeader = content.substring(0, content.indexOf('{'));
+    Pattern classNamePattern = Pattern.compile("(?:class|enum) (\\S*)", Pattern.CASE_INSENSITIVE);
+    Matcher classNameMatcher = classNamePattern.matcher(classDefHeader);
+    String className = "";
+    String extend = "";
+    String[] implementList = null;
+    if (classNameMatcher.find()) {
+      className = classNameMatcher.group(1);
+    }
+    Pattern extendPattern = Pattern.compile("extends (\\S*)", Pattern.CASE_INSENSITIVE);
+    Matcher extendMatcher = extendPattern.matcher(classDefHeader);
+    if (extendMatcher.find()) {
+      extend = extendMatcher.group(1);
+    }
+    Pattern implementPattern = Pattern.compile("implements ((\\S*[\\s,]?)*)",
+        Pattern.CASE_INSENSITIVE);
+    Matcher implementMatcher = implementPattern.matcher(classDefHeader);
+    if (implementMatcher.find()) {
+      String implement = implementMatcher.group(1);
+      implementList = implement.split("(\\s|,)+");
+    }
+    cck.setName(className);
+    cck.setExtend(extend);
+    if (implementList != null) {
+      cck.setImplement(Arrays.asList(implementList));
+    }
+    return cck;
+  }
+
+  private void init() {
     methods = new HashMap<>();
     constructors = new HashMap<>();
     innerClass = new ArrayList<>();
     implement = new ArrayList<>();
     classParameter = new HashMap<>();
-  }
-
-  public JClass(String name) {
-    this.name = name;
   }
 
   @Override
@@ -61,36 +106,6 @@ public class JClass {
       sb.append("    ").append(classs).append(System.lineSeparator());
     }
     return sb.toString();
-  }
-
-  public static JClass classBuilder(String content) {
-    JClass cck = new JClass();
-    String classDefHeader = content.substring(0, content.indexOf('{'));
-    Pattern classNamePattern = Pattern.compile("(?:class|enum) (\\S*)", Pattern.CASE_INSENSITIVE);
-    Matcher classNameMatcher = classNamePattern.matcher(classDefHeader);
-    String className = "";
-    String extend = "";
-    String[] implementList = null;
-    if (classNameMatcher.find()) {
-      className = classNameMatcher.group(1);
-    }
-    Pattern extendPattern = Pattern.compile("extends (\\S*)", Pattern.CASE_INSENSITIVE);
-    Matcher extendMatcher = extendPattern.matcher(classDefHeader);
-    if (extendMatcher.find()) {
-      extend = extendMatcher.group(1);
-    }
-    Pattern implementPattern = Pattern.compile("implements ((\\S*[\\s,]?)*)", Pattern.CASE_INSENSITIVE);
-    Matcher implementMatcher = implementPattern.matcher(classDefHeader);
-    if (implementMatcher.find()) {
-      String implement = implementMatcher.group(1);
-      implementList = implement.split("(\\s|,)+");
-    }
-    cck.setName(className);
-    cck.setExtend(extend);
-    if (implementList != null) {
-      cck.setImplement(Arrays.asList(implementList));
-    }
-    return cck;
   }
 
   public String getName() {
@@ -121,12 +136,12 @@ public class JClass {
     return isInnerClass;
   }
 
-  public void setInnerClass(boolean innerClass) {
-    isInnerClass = innerClass;
-  }
-
   public List<String> getInnerClass() {
     return innerClass;
+  }
+
+  public void setInnerClass(boolean innerClass) {
+    isInnerClass = innerClass;
   }
 
   public void setInnerClass(List<String> innerClass) {
