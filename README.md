@@ -6,6 +6,8 @@
 
 -o: output path dir, default to feature.json
 
+-t: threashold, default to 130
+
 --printTree: default false
 
 Analyze the class-method relation ship within each given ".java" file
