@@ -17,9 +17,9 @@ public class MethodComparator implements Comparator<ASTMethodNode> {
       return Integer.compare(a1.getOutdegreeMeth().size(), a2.getOutdegreeMeth().size());
     } else {
       if (a1.getIndegreeMeth().size() != a2.getIndegreeMeth().size()) {
-        return - Integer.compare(a1.getIndegreeMeth().size(), a2.getIndegreeMeth().size());
+        return -Integer.compare(a1.getIndegreeMeth().size(), a2.getIndegreeMeth().size());
       } else {
-        return - Double.compare(a1.getjMethod().getComplexity(), a2.getjMethod().getComplexity());
+        return -Double.compare(a1.getjMethod().getComplexity(), a2.getjMethod().getComplexity());
       }
     }
 

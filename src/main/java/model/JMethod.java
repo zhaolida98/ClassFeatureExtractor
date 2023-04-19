@@ -126,7 +126,7 @@ public class JMethod {
       double n = n1 + n2;
       double N = N1 + N2;
       if (n > 0) {
-        halsteadVolumn = N * Math.log(n)/Math.log(2);
+        halsteadVolumn = N * Math.log(n) / Math.log(2);
       } else {
         halsteadVolumn = 1;
       }

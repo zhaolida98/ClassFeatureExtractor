@@ -1,8 +1,7 @@
 package model;
 
-import static org.apache.commons.codec.digest.MessageDigestAlgorithms.MD5;
-
 import com.github.javaparser.ast.ImportDeclaration;
+import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.PackageDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
@@ -12,24 +11,18 @@ import com.github.javaparser.ast.expr.AnnotationExpr;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import org.apache.commons.codec.digest.DigestUtils;
 import utils.ASTNodeUtils;
-import utils.HashUtils;
-import visitor.Visitor;
 
 public class ASTNode implements Cloneable {
 
-  private Node node;
-  private ASTNode parent;
   private final List<ASTNode> children = new ArrayList<>();
+  private final ASTNode parent;
+  private Node node;
   private ASTNode funcRef;
 
   private String name;
 
-  private String hash = null;
-
-  private Map<String, Long> hashCache = new HashMap<>();
+  private HashMap<Integer, Integer> edgeVector = null;
 
   public ASTNode(Node node, ASTNode parentNode) {
     node = node.removeComment();
@@ -39,8 +32,14 @@ public class ASTNode implements Cloneable {
       for (Node n : node.getChildNodes()) {
         ASTNode astNode = null;
         if (n instanceof ImportDeclaration || n instanceof PackageDeclaration
-            || n instanceof AnnotationExpr || n instanceof Comment) {
+            || n instanceof AnnotationExpr || n instanceof Comment
+            || n instanceof Modifier) {
           continue;
+        }
+        String[] classNameList = node.getClass().getName().split("\\.");
+        String className = classNameList[classNameList.length - 1];
+        if (!NodeTypeEnum.TypeCollection.containsKey(className)) {
+          System.err.println(node.getClass().getName());
         }
         if (n instanceof ClassOrInterfaceDeclaration) {
           astNode = new ASTClassNode(n, this);
@@ -80,6 +79,8 @@ public class ASTNode implements Cloneable {
     return parent;
   }
 
+// To avoid cloning object with high cost, we re-used the same object multiple times
+// However, only one parent is allowed for each object.
 //  public void setParent(ASTNode parent) {
 //    this.parent = parent;
 //  }
@@ -117,30 +118,41 @@ public class ASTNode implements Cloneable {
     this.name = name;
   }
 
-  public Map<String, Long> getHashCache() {
-    return hashCache;
-  }
-
-  public String getHash() {
-    if (this.hash == null) {
-      String origin = this.node.getClass().getName();
-      String current = new DigestUtils(MD5).digestAsHex(origin);
-      for (ASTNode child : this.getChildren()) {
-        current = HashUtils.addHash(current, child.getHash());
-        this.hashCache = ASTNodeUtils.mergeMap(this.getHashCache(), child.getHashCache());
+  public HashMap<Integer, Integer> getEdgeVector(ASTNode parent) {
+    if (this.edgeVector == null) {
+      int nodeTypeSize = NodeTypeEnum.TypeCollection.size();
+      this.edgeVector = new HashMap<>();
+      // ASTNode build in parent is different from the param here
+      // To avoid cloning object with high cost, we re-used the same object multiple times
+      // However, only one parent is allowed for each object.
+      if (parent != null) {
+        String parentClassName = parent.getNode().getClass().getSimpleName();
+        String currentClassname = this.getNode().getClass().getSimpleName();
+        if (NodeTypeEnum.TypeCollection.containsKey(parentClassName)
+            && NodeTypeEnum.TypeCollection.containsKey(currentClassname)) {
+          int parentClassSeq = NodeTypeEnum.TypeCollection.get(parentClassName);
+          int currentClassSeq = NodeTypeEnum.TypeCollection.get(currentClassname);
+          this.edgeVector.put((parentClassSeq - 1) * nodeTypeSize + currentClassSeq, 1);
+        } else {
+          System.err.println(
+              parentClassName + " or " + currentClassname + " not in type collection");
+          System.exit(1);
+        }
       }
-      this.hash = current;
-      this.hashCache.put(current, Math.min(Integer.MAX_VALUE, this.hashCache.getOrDefault(current, 0L) + 1));
+
+      for (ASTNode child : this.getChildren()) {
+        this.edgeVector = ASTNodeUtils.addVector(this.edgeVector, child.getEdgeVector(this));
+      }
     }
-    return this.hash;
+    return this.edgeVector;
 
   }
 
-  public void accept(Visitor visitor) {
-    visitor.visitHash(this);
-    for (ASTNode child : this.getChildren()) {
-      child.accept(visitor);
-    }
-  }
+//  public void accept(Visitor visitor) {
+//    visitor.visitHash(this);
+//    for (ASTNode child : this.getChildren()) {
+//      child.accept(visitor);
+//    }
+//  }
 
 }

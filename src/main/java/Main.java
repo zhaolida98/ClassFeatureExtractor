@@ -12,10 +12,12 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import model.ASTClassNode;
 import model.ASTNode;
+import model.NodeTypeEnum;
 import utils.ASTNodeUtils;
 import utils.Constant;
 import utils.FileUtils;
@@ -24,23 +26,20 @@ public class Main {
 
   private static final Gson GSON = new GsonBuilder().excludeFieldsWithoutExposeAnnotation()
       .create();
-
-  private static String filePath = "";
-
-  private static boolean printTree = false;
-  private static boolean debug = false;
-  private static String output = System.getProperty("user.dir");
-
-  private static String filePathPrefix = "";
-
   private static final String readMe = "Java Class Feature Extractor\n"
       + "============================\n"
       + "-f: file path, can be file or folder\n"
       + "-o: output path dir\n"
       + "--printTree: default false\n";
-
+  public static HashMap<String, Integer> check = (HashMap<String, Integer>) NodeTypeEnum.TypeCollection.clone();
+  private static String filePath = "";
+  private static boolean printTree = false;
+  private static boolean debug = false;
+  private static String output = System.getProperty("user.dir");
+  private static String filePathPrefix = "";
 
   public static void main(String[] args) throws IOException {
+
     // resolve parameters
     Iterator<String> it = Arrays.stream(args).iterator();
     while (it.hasNext()) {
@@ -110,11 +109,11 @@ public class Main {
       if (debug) {
         System.out.println("On " + path.getAbsolutePath());
       }
-
       ClassParser classParser = new ClassParser();
       ASTNode fullAst = classParser.buildFullAST(path);
       if (fullAst == null) {
-        System.err.println("Error on parsing file, could be grammar error： " + path.getAbsolutePath());
+        System.err.println(
+            "Error on parsing file, could be grammar error： " + path.getAbsolutePath());
         continue;
       }
       List<ASTNode> resolvedAST = new ArrayList<>();
@@ -134,6 +133,7 @@ public class Main {
         } else {
           System.err.println("too many files to print");
         }
+
       }
 
       // transfer class features to json object
@@ -145,16 +145,25 @@ public class Main {
       //  ...
       // }
       for (ASTNode cn : resolvedAST) {
-        ASTComparator astComparator = new ASTComparator((ASTClassNode) cn);
         double classComplexity = ((ASTClassNode) cn).getComplexity();
-        JsonElement nodeHash = GSON.toJsonTree(astComparator.getNodeHashMap());
+        HashMap<Integer, Integer> feature = cn.getEdgeVector(null);
+        JsonElement nodeHash = GSON.toJsonTree(feature);
         String addr = cn.getName() + "@" + path.getAbsolutePath().replace(filePathPrefix, "");
         JsonObject classFeature = new JsonObject();
         classFeature.add("complexity", new JsonPrimitive(classComplexity));
         classFeature.add("feature", nodeHash);
         jsonObject.add(addr, classFeature);
+        if (printTree) {
+          System.out.println(addr);
+          for (int i : feature.keySet()) {
+            System.out.println(NodeTypeEnum.index2Type(i) +": "+ feature.get(i));
+          }
+          System.out.println();
+        }
       }
-      if (debug) System.out.printf("finish processing %d/%d%n", ++cnt, pathList.size());
+      if (debug) {
+        System.out.printf("finish processing %d/%d%n", ++cnt, pathList.size());
+      }
     }
 
     // write to file out.json

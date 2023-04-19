@@ -15,9 +15,9 @@ import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.PrimitiveType;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import model.ASTNode;
 
@@ -25,8 +25,7 @@ public class ASTNodeUtils {
 
   public static void walkNode(ASTNode astNode, int indent) {
     Node node = astNode.getNode();
-    String[] tmpClassName = node.getClass().getName().split("\\.");
-    String className = tmpClassName[tmpClassName.length - 1];
+    String className = node.getClass().getSimpleName();
     StringBuilder sb = new StringBuilder();
     for (int i = 0; i < indent; i++) {
       sb.append("  ");
@@ -59,6 +58,10 @@ public class ASTNodeUtils {
     return methodCallMap;
   }
 
+  public static String getClassName(Object o) {
+    return o.getClass().getSimpleName();
+  }
+
   public static Map<String, Long> mergeMap(Map<String, Long> a,
       Map<String, Long> b) {
     Map<String, Long> res = new HashMap<>(a);
@@ -71,6 +74,19 @@ public class ASTNodeUtils {
     return res;
   }
 
+  public static HashMap<Integer, Integer> addVector(HashMap<Integer, Integer> v1,
+      HashMap<Integer, Integer> v2) {
+    HashMap<Integer, Integer> res = (HashMap<Integer, Integer>) v1.clone();
+    for (Integer index : v2.keySet()) {
+      long sum = (long) v2.get(index) + (long) res.getOrDefault(index, 0);
+      if (sum > Integer.MAX_VALUE) {
+        res.put(index, Integer.MAX_VALUE);
+      } else {
+        res.put(index, (int) sum);
+      }
+    }
+    return res;
+  }
 
   private static void recursivelyLocateMethodCall(Map<String, List<ASTNode>> methodCallMap,
       ASTNode astNode) {

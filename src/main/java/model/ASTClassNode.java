@@ -8,10 +8,8 @@ import java.util.Map;
 public class ASTClassNode extends ASTNode {
 
   private final JClass jc;
-
-  private double complexity = -1;
-
   private final Map<String, ASTMethodNode> methodNodeMap = new HashMap<>();
+  private double complexity = -1;
 
   public ASTClassNode(JClass jc) {
     super(new ClassOrInterfaceDeclaration(), null);

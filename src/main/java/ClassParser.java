@@ -28,12 +28,14 @@ public class ClassParser {
     try {
       String content = FileUtils.readFile(inputFile.getAbsolutePath(), StandardCharsets.UTF_8);
       cu = StaticJavaParser.parse(content);
+      ASTNode astNode = new ASTNode(cu, null);
+      return astNode;
+    } catch (StackOverflowError e) {
+      System.err.println("Stack over flow detected in " + inputFile.getAbsolutePath());
     } catch (Exception e) {
-      return null;
+      System.err.println("Exception detected" + e + " in " + inputFile.getAbsolutePath());
     }
-    ASTNode astNode = new ASTNode(cu, null);
-
-    return astNode;
+    return null;
   }
 
   public List<ASTClassNode> extractClassNode(ASTNode astNode) {
@@ -80,8 +82,9 @@ public class ClassParser {
           // resolve self recursive methods
           if (methodDefExpr.equals(methodName)) {
             for (ASTNode mcn : methodCallNodes) {
-              ASTNode selfLoopNode = new ASTNode(ASTDummyMethodFactory.create(SELF_LOOP_REF), null);
+              ASTNode selfLoopNode = new ASTNode(ASTDummyMethodFactory.create(SELF_LOOP_REF), mcn);
               mcn.addChildren(selfLoopNode);
+
             }
           } else {
             if (!astMethodNode.getOutdegreeMeth().containsKey(methodDefExpr)) {
@@ -91,7 +94,7 @@ public class ClassParser {
           }
         } else {
           for (ASTNode mcn : methodCallNodes) {
-            ASTNode dummyNode = new ASTNode(ASTDummyMethodFactory.create(EXTERNAL_METH_REF), null);
+            ASTNode dummyNode = new ASTNode(ASTDummyMethodFactory.create(EXTERNAL_METH_REF), mcn);
             mcn.addChildren(dummyNode);
           }
         }
