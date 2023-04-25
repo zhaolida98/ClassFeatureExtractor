@@ -1,5 +1,7 @@
 package model;
 
+import static utils.Constant.CLASS_THRESHOLD;
+
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import java.util.HashMap;
@@ -32,12 +34,11 @@ public class ASTClassNode extends ASTNode {
   }
 
   public boolean isSignificant() {
-    for (ASTMethodNode m : getMethodNodeMap().values()) {
-      if (m.isSignificant()) {
-        return true;
-      }
+    if (getComplexity() > CLASS_THRESHOLD) {
+      return true;
+    } else {
+      return false;
     }
-    return false;
   }
 
   public double getComplexity() {
