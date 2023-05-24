@@ -1,12 +1,17 @@
+package Strategy;
+
+import static utils.ASTNodeUtils.getFileAST;
 import static utils.Constant.EXTERNAL_METH_REF;
 import static utils.Constant.INSIGNIFICANT_METH_REF;
 import static utils.Constant.SELF_LOOP_REF;
 
-import com.github.javaparser.StaticJavaParser;
-import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import java.io.File;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -14,26 +19,70 @@ import java.util.PriorityQueue;
 import model.ASTClassNode;
 import model.ASTMethodNode;
 import model.ASTNode;
+import model.ParamManager;
 import utils.ASTDummyMethodFactory;
 import utils.ASTNodeUtils;
-import utils.FileUtils;
 import utils.MethodComparator;
 
-public class ClassParser {
-
+public class ClassHashSetStrategy implements Strategy{
+  private static final Gson GSON = new GsonBuilder().excludeFieldsWithoutExposeAnnotation()
+      .create();
   List<ASTClassNode> classList = new ArrayList<>();
+  List<ASTNode> resolvedAST = new ArrayList<>();
 
-  public ASTNode buildFullAST(File inputFile) {
-    CompilationUnit cu = null;
-    try {
-      String content = FileUtils.readFile(inputFile.getAbsolutePath(), StandardCharsets.UTF_8);
-      cu = StaticJavaParser.parse(content);
-    } catch (Exception e) {
-      return null;
+  ParamManager paramManager = ParamManager.getInstance();
+
+  @Override
+  public JsonObject execute(File path) {
+    ASTNode astNode = getFileAST(path);
+    resolvedAST = resolveAST(astNode);
+    JsonObject jsonObject = toJsonObject(path);
+    if (paramManager.isPrintTree()) {
+      printTree();
     }
-    ASTNode astNode = new ASTNode(cu, null);
+    return jsonObject;
+  }
 
-    return astNode;
+  private JsonObject toJsonObject(File path) {
+    // transfer class features to json object
+    // {
+    //  <className>@<java address>: {
+    //   "feature": {<hash>:<cnt>,...},
+    //   "complexity": <complexity>
+    //  },
+    //  ...
+    // }
+    JsonObject jsonObject = new JsonObject();
+    for (ASTNode cn : resolvedAST) {
+      ASTComparator astComparator = new ASTComparator((ASTClassNode) cn);
+      double classComplexity = ((ASTClassNode) cn).getComplexity();
+      JsonElement nodeHash = GSON.toJsonTree(astComparator.getNodeHashMap());
+      String addr = cn.getName() + "@" + path.getAbsolutePath();
+      JsonObject classFeature = new JsonObject();
+      classFeature.add("complexity", new JsonPrimitive(classComplexity));
+      classFeature.add("feature", nodeHash);
+      jsonObject.add(addr, classFeature);
+    }
+    return jsonObject;
+  }
+
+  private void printTree(){
+    // print JClass
+    for (ASTNode cn : resolvedAST) {
+      ASTNodeUtils.walkNode(cn, 0);
+      System.out.println();
+    }
+  }
+
+  private List<ASTNode> resolveAST(ASTNode astNode) {
+    List<ASTNode> resolvedAST = new ArrayList<>();
+    List<ASTClassNode> classNodeList = extractClassNode(astNode);
+    for (ASTClassNode cn : classNodeList) {
+      if (cn.isSignificant()) {
+        resolvedAST.add(methodLinker(cn));
+      }
+    }
+    return resolvedAST;
   }
 
   public List<ASTClassNode> extractClassNode(ASTNode astNode) {
@@ -187,6 +236,5 @@ public class ClassParser {
     }
     return astClassNode;
   }
-
 
 }

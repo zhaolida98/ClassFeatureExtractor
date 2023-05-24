@@ -1,12 +1,11 @@
+package Strategy;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import model.ASTClassNode;
-import model.ASTNode;
-import utils.ASTNodeUtils;
-import visitor.NodeHashVisitor;
 
 public class ASTComparator {
 

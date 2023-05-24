@@ -13,6 +13,8 @@ import com.github.javaparser.ast.expr.SimpleName;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.PrimitiveType;
+import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -145,4 +147,18 @@ public class ASTNodeUtils {
     return null;
   }
   // further resolve node into other AST format
+
+  public static ASTNode getFileAST(File path) {
+    CompilationUnit cu = null;
+    ASTNode fullAst = null;
+    try {
+      String content = FileUtils.readFile(path.getAbsolutePath(), StandardCharsets.UTF_8);
+      cu = StaticJavaParser.parse(content);
+    } catch (Exception e) {
+      System.err.println("Error on parsing file, could be grammar error： " + path.getAbsolutePath());
+      return null;
+    }
+    fullAst  = new ASTNode(cu, null);
+    return fullAst;
+  }
 }

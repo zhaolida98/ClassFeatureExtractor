@@ -57,7 +57,7 @@ public class JMethod {
   public JMethod(String content, String name) {
     this.name = name;
     // remove comments, already removed when building node
-//    content = content.replaceAll("\\/\\/[^\\n]*(?:\\n|$)|\\/\\*(?:[^*]|\\*(?!\\/))*\\*\\/", "");
+    content = content.replaceAll("\\/\\/[^\\n]*(?:\\n|$)|\\/\\*(?:[^*]|\\*(?!\\/))*\\*\\/", "");
     // remove annotations
     content = content.replaceAll("@\\w+\\s*(?:\\([^()]*\\),*)?", "");
     // normalize content, only single space

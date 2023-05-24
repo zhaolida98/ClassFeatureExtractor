@@ -16,7 +16,6 @@ import java.util.Map;
 import org.apache.commons.codec.digest.DigestUtils;
 import utils.ASTNodeUtils;
 import utils.HashUtils;
-import visitor.Visitor;
 
 public class ASTNode implements Cloneable {
 
@@ -134,13 +133,6 @@ public class ASTNode implements Cloneable {
     }
     return this.hash;
 
-  }
-
-  public void accept(Visitor visitor) {
-    visitor.visitHash(this);
-    for (ASTNode child : this.getChildren()) {
-      child.accept(visitor);
-    }
   }
 
 }
