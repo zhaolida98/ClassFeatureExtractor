@@ -34,11 +34,12 @@ public class ASTClassNode extends ASTNode {
   }
 
   public boolean isSignificant() {
-    if (getComplexity() > CLASS_THRESHOLD) {
-      return true;
-    } else {
-      return false;
+    for (ASTMethodNode m : getMethodNodeMap().values()) {
+      if (m.isSignificant()) {
+        return true;
+      }
     }
+    return false;
   }
 
   public double getComplexity() {

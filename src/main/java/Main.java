@@ -19,6 +19,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import model.ParamManager;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -97,6 +98,19 @@ public class Main {
         continue;
       }
       logger.debug(String.format("finish processing %d/%d%n", ++cnt, pathList.size()));
+    }
+
+    if (paramManager.isHasPagerank()) {
+      Map<String, Double> pageRankMap =  PageRankResolver.resolvePageRank(pathList);
+      int totalCount = pageRankMap.size();
+      int count = 0;
+      for (Entry<String, Double> p : pageRankMap.entrySet()) {
+        if (totalJsonObject.get(p.getKey()) != null) {
+          totalJsonObject.get(p.getKey()).getAsJsonObject().addProperty("pagerank", p.getValue());
+          totalJsonObject.get(p.getKey()).getAsJsonObject().addProperty("percentile", 1.0 * count / totalCount);
+          count++;
+        }
+      }
     }
 
     // write to file out.json

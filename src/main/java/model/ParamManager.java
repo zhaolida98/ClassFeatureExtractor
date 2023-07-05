@@ -19,7 +19,8 @@ public class ParamManager {
   private boolean help = false;
   @Parameter(names = "-t", description = "threshold. default to 60")
   private int threshold = 60;
-
+  @Parameter(names = "--pagerank", description = "add class pagerank to the result. Only applicable for class hash")
+  private boolean hasPagerank = false;
 
   public static ParamManager paramManager;
 
@@ -54,5 +55,9 @@ public class ParamManager {
 
   public boolean isHelp() {
     return help;
+  }
+
+  public boolean isHasPagerank() {
+    return hasPagerank;
   }
 }

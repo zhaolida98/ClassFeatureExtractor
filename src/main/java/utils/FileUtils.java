@@ -27,7 +27,7 @@ public class FileUtils {
       outputStream.write(strToBytes);
 
       outputStream.close();
-      System.out.println("write file to" + filePath);
+      System.out.println("write file to " + filePath);
     } catch (Exception e) {
       e.printStackTrace();
     }

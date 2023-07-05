@@ -2,6 +2,7 @@ package model;
 
 import static utils.Constant.SIGNIFICANCE_THRESHOLD;
 
+import com.github.javaparser.ast.Node;
 import com.google.gson.annotations.Expose;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -39,6 +40,7 @@ public class JMethod {
 
   public JMethod(String content) {
     // remove comments
+    content = content.replaceAll("http(s)?:\\/\\/", "");
     content = content.replaceAll("\\/\\/[^\\n]*(?:\\n|$)|\\/\\*(?:[^*]|\\*(?!\\/))*\\*\\/", "");
     // remove annotations
     content = content.replaceAll("@\\w+\\s*(?:\\([^()]*\\),*)?", "");
@@ -50,13 +52,14 @@ public class JMethod {
     calculateCyclomaticComplexity(this.content);
     calculateHalsteadVolume(this.content);
     calculateLineOfCode(this.content);
-    isTestFunction(this.content);
+    isTestFunction();
     calculateComplexity();
   }
 
   public JMethod(String content, String name) {
     this.name = name;
     // remove comments, already removed when building node
+    content = content.replaceAll("http(s)?:\\/\\/", "");
     content = content.replaceAll("\\/\\/[^\\n]*(?:\\n|$)|\\/\\*(?:[^*]|\\*(?!\\/))*\\*\\/", "");
     // remove annotations
     content = content.replaceAll("@\\w+\\s*(?:\\([^()]*\\),*)?", "");
@@ -67,7 +70,7 @@ public class JMethod {
     calculateCyclomaticComplexity(this.content);
     calculateHalsteadVolume(this.content);
     calculateLineOfCode(this.content);
-    isTestFunction(this.content);
+    isTestFunction();
     calculateComplexity();
   }
 
@@ -160,22 +163,27 @@ public class JMethod {
     this.name = returnType + " " + funcName + param;
   }
 
-  private void isTestFunction(String content) {
-    String functionHeader = content.substring(0, content.indexOf('(')).trim();
-    String[] functionHeaderList = functionHeader.split(" ");
-    String returnType = "";
-    String funcName = "";
-    funcName = functionHeaderList[functionHeaderList.length - 1].trim().toLowerCase();
-    if (functionHeaderList.length > 1) {
-      returnType = functionHeaderList[functionHeaderList.length - 2];
+  private void isTestFunction() {
+    // extract name
+    // filter by name
+    String[] nameList = this.name.split("; ");
+    String returnType = nameList[0].toLowerCase();
+    String funcName = nameList[1].toLowerCase();
+    if ((funcName.equals("equals") && returnType.equals("boolean"))
+        || (funcName.equals("hashcode") && returnType.equals("int"))
+        || (funcName.equals("tostring") && returnType.equals("string"))
+        || (funcName.contains("test") && returnType.equals("void"))
+        || funcName.contains("adapter")
+        || funcName.contains("converter")
+        ) {
+      this.isTest = true;
+    } else {
+      this.isTest = false;
     }
-
-    this.isTest = (funcName.startsWith("test") ||
-        funcName.endsWith("test")) && returnType.equals("void");
   }
 
   public boolean isSignificant() {
-    return this.getComplexity() > SIGNIFICANCE_THRESHOLD;
+    return this.getComplexity() > SIGNIFICANCE_THRESHOLD && !this.isTest;
   }
 
   public String getName() {
