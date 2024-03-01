@@ -1,7 +1,6 @@
 package model;
 
 import com.beust.jcommander.Parameter;
-import com.google.gson.annotations.SerializedName;
 import utils.Constant;
 
 public class ParamManager {
@@ -28,9 +27,12 @@ public class ParamManager {
   public static ParamManager getInstance() {
     if (paramManager == null) {
       paramManager = new ParamManager();
-      Constant.CLASS_THRESHOLD = paramManager.threshold;
     }
     return paramManager;
+  }
+
+  public int getThreshold() {
+    return threshold;
   }
 
   public String getFilePath() {

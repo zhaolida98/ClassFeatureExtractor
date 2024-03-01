@@ -1,12 +1,17 @@
 package model;
 
+import com.github.javaparser.TokenRange;
+import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.expr.SimpleName;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.type.VoidType;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -55,6 +60,32 @@ public class ASTMethodNode extends ASTNode {
     } else {
       this.jMethod = new JMethod(node.toString(), methodId);
     }
+  }
+
+  public ASTNode getTopClass() {
+    ASTNode curParent = this.getParent();
+
+    while (!(curParent.getNode() instanceof ClassOrInterfaceDeclaration)){
+//        && curParent.getParent().getNode() instanceof CompilationUnit)) {
+      curParent = curParent.getParent();
+    }
+
+    return curParent;
+  }
+
+  public static HashSet<String> getTokenSet(Node curNode) {
+    HashSet<String> tokens = new HashSet<>();
+    for (Node n : curNode.getChildNodes()) {
+      TokenRange tokenRange = n.getTokenRange().orElse(null);
+      if (tokenRange != null) {
+        tokenRange.spliterator().forEachRemaining(token -> {
+          if (!token.getText().trim().equals("")) {
+            tokens.add(token.getText());
+          }
+        });
+      }
+    }
+    return tokens;
   }
 
 

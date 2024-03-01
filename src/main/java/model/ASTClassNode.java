@@ -1,7 +1,5 @@
 package model;
 
-import static utils.Constant.CLASS_THRESHOLD;
-
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import java.util.HashMap;
@@ -15,12 +13,6 @@ public class ASTClassNode extends ASTNode {
 
   private final Map<String, ASTMethodNode> methodNodeMap = new HashMap<>();
 
-  public ASTClassNode(JClass jc) {
-    super(new ClassOrInterfaceDeclaration(), null);
-    this.jc = jc;
-    super.setName(jc.getName());
-    this.getChildren().clear();
-  }
 
 
   public ASTClassNode(Node n, ASTNode astNode) {
@@ -34,6 +26,16 @@ public class ASTClassNode extends ASTNode {
   }
 
   public boolean isSignificant() {
+    String lowName = this.getName().toLowerCase();
+    // avoid support functions
+    if (lowName.contains("test")
+        || lowName.contains("example")
+        || lowName.contains("factory")
+        || lowName.contains("adapter")
+        || lowName.contains("converter")) {
+      return false;
+    }
+    // if no method is significant, the class is not significant
     for (ASTMethodNode m : getMethodNodeMap().values()) {
       if (m.isSignificant()) {
         return true;
@@ -50,7 +52,13 @@ public class ASTClassNode extends ASTNode {
           complexity += m.getjMethod().getComplexity();
         }
       }
+      for (ASTNode n : this.getChildren()) {
+        if (n instanceof ASTClassNode) {
+          complexity += ((ASTClassNode) n).getComplexity();
+        }
+      }
     }
+
     return complexity;
   }
 }

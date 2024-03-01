@@ -38,28 +38,14 @@ public class JMethod {
   private int start = -1;
   private int end = -1;
 
-  public JMethod(String content) {
-    // remove comments
-    content = content.replaceAll("http(s)?:\\/\\/", "");
-    content = content.replaceAll("\\/\\/[^\\n]*(?:\\n|$)|\\/\\*(?:[^*]|\\*(?!\\/))*\\*\\/", "");
-    // remove annotations
-    content = content.replaceAll("@\\w+\\s*(?:\\([^()]*\\),*)?", "");
-    // normalize content, only single space
-    content = content.replaceAll("\\s+", " ");
-    this.content = content;
-    getFuncNameParam(this.content);
-    calculateSha256(this.content);
-    calculateCyclomaticComplexity(this.content);
-    calculateHalsteadVolume(this.content);
-    calculateLineOfCode(this.content);
-    isTestFunction();
-    calculateComplexity();
-  }
+  private static final ParamManager paramManager = ParamManager.getInstance();
+
 
   public JMethod(String content, String name) {
     this.name = name;
     // remove comments, already removed when building node
-    content = content.replaceAll("http(s)?:\\/\\/", "");
+    calculateHalsteadVolume(content);
+    content = content.replaceAll(":\\/\\/", "");
     content = content.replaceAll("\\/\\/[^\\n]*(?:\\n|$)|\\/\\*(?:[^*]|\\*(?!\\/))*\\*\\/", "");
     // remove annotations
     content = content.replaceAll("@\\w+\\s*(?:\\([^()]*\\),*)?", "");
@@ -68,7 +54,6 @@ public class JMethod {
     this.content = content;
     calculateSha256(this.content);
     calculateCyclomaticComplexity(this.content);
-    calculateHalsteadVolume(this.content);
     calculateLineOfCode(this.content);
     isTestFunction();
     calculateComplexity();
@@ -135,7 +120,7 @@ public class JMethod {
       }
       this.hv = halsteadVolumn;
     } catch (Exception e) {
-      this.hv = 0;
+      this.hv = 1;
     }
   }
 
@@ -183,7 +168,7 @@ public class JMethod {
   }
 
   public boolean isSignificant() {
-    return this.getComplexity() > SIGNIFICANCE_THRESHOLD && !this.isTest;
+    return this.getComplexity() > paramManager.getThreshold() && !this.isTest;
   }
 
   public String getName() {

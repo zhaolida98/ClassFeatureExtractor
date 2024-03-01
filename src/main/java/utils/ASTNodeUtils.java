@@ -153,6 +153,10 @@ public class ASTNodeUtils {
     ASTNode fullAst = null;
     try {
       String content = FileUtils.readFile(path.getAbsolutePath(), StandardCharsets.UTF_8);
+
+      if (content.matches("[Gg]enerated [Bb]y")) {
+        return null;
+      }
       cu = StaticJavaParser.parse(content);
     } catch (Exception e) {
       System.err.println("Error on parsing file, could be grammar error： " + path.getAbsolutePath());

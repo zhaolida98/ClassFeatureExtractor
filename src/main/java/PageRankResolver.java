@@ -1,5 +1,6 @@
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.ImportDeclaration;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import java.io.File;
@@ -12,6 +13,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,23 +32,38 @@ public class PageRankResolver {
     HashMap<String, HashSet<String>> classToken = new HashMap<>();
     HashMap<String, HashSet<String>> classRelation = new HashMap<>();
     HashMap<String, String> classPath = new HashMap<>();
+    HashMap<String, String> staticImportMap = new HashMap<>();
     for (File path : pathList) {
       String content = "";
       try {
         content = FileUtils.readFile(path.getAbsolutePath(), StandardCharsets.UTF_8);
       } catch (IOException e) {
-
+        logger.error("Error in parsing ", path.getAbsolutePath());
       }
       try {
         cu = StaticJavaParser.parse(content);
         if (cu != null) {
           for (Node n : cu.getChildNodes()) {
+            // if has static import, should replace static function name to the class name
+            // we first collect all static function/class relationship
+            // then switch the function name with class name
+            if (n instanceof ImportDeclaration && ((ImportDeclaration) n).isStatic()) {
+              String[] importStringList = ((ImportDeclaration) n).getNameAsString().split("\\.");
+              String staticFuncName = importStringList[importStringList.length - 1];
+              String staticClassName = importStringList[importStringList.length - 2];
+              staticImportMap.put(staticFuncName, staticClassName);
+            }
             if (n instanceof ClassOrInterfaceDeclaration && !(n.getParentNode()
                 .get() instanceof ClassOrInterfaceDeclaration)) {
               String name = ((ClassOrInterfaceDeclaration) n).getNameAsString();
               classPath.put(name, path.getAbsolutePath());
               HashSet<String> tokenSet = new HashSet<>();
               n.getTokenRange().get().forEach(t -> tokenSet.add(t.getText()));
+              for (String staticFuncName : staticImportMap.keySet()) {
+                if (tokenSet.contains(staticFuncName)) {
+                  tokenSet.add(staticImportMap.get(staticFuncName));
+                }
+              }
               classToken.put(name, tokenSet);
             }
           }

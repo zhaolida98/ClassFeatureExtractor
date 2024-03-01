@@ -43,6 +43,7 @@ public class JClass {
     for (Node child : node.getChildNodes()) {
       if (child instanceof SimpleName) {
         this.name = child.toString();
+        break;
       }
     }
   }

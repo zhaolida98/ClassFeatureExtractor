@@ -1,8 +1,10 @@
+import static Strategy.EnumStrategy.CLASS_HASH;
 import static Strategy.EnumStrategy.CLASS_HASHSET;
 import static Strategy.EnumStrategy.CLASS_VEC;
 import static Strategy.EnumStrategy.FUNCTION_HASH;
 
 import Strategy.ClassHashSetStrategy;
+import Strategy.ClassHashStrategy;
 import Strategy.ClassVecStrategy;
 import Strategy.FeatureContext;
 import Strategy.FunctionHashStrategy;
@@ -62,7 +64,7 @@ public class Main {
       System.err.println("File not found: " + filePath);
     }
     if (paramManager.isDebug()) {
-      logger.info(String.format("Threshold %d %n", Constant.SIGNIFICANCE_THRESHOLD));
+      logger.info(String.format("Threshold %d %n", paramManager.getThreshold()));
       logger.info(String.format("Found %d files%n", pathList.size()));
       for (File p : pathList) {
         System.out.println("  - " + p.getAbsolutePath());
@@ -72,6 +74,10 @@ public class Main {
     JsonObject totalJsonObject = new JsonObject();
     int cnt = 0;
     for (File path : pathList) {
+      String pathString = path.getPath().toLowerCase();
+      if (!paramManager.isDebug() && (pathString.contains("example") || pathString.contains("test"))) {
+        continue;
+      }
       logger.debug("On " + path.getAbsolutePath());
       try {
         // start extracting features of all class of all java files
@@ -82,18 +88,24 @@ public class Main {
           featureContext.setStrategy(new ClassVecStrategy());
         } else if (strategyName.equals(FUNCTION_HASH.getName())) {
           featureContext.setStrategy(new FunctionHashStrategy());
+        } else if (strategyName.equals(CLASS_HASH.getName())) {
+          featureContext.setStrategy(new ClassHashStrategy());
         } else {
-          logger.error("Unacceptable strategy " + strategyName + ". Only in [classHashSet, classVec, functionHash]");
+          logger.error("Unacceptable strategy " + strategyName + ". Only in [classHashSet, classVec, functionHash, classHash]");
         }
         JsonObject jsonObject = featureContext.executeStrategy(path);
+        if (jsonObject == null) {
+          continue;
+        }
         for (Entry<String, JsonElement> entry : jsonObject.asMap().entrySet()) {
           totalJsonObject.add(entry.getKey(), entry.getValue());
         }
       } catch (Error error) {
         logger.error(String.format("failed processing %s%n%s", path.getAbsolutePath(), error.getMessage()));
+        error.printStackTrace();
         continue;
       } catch (Exception exception) {
-        logger.error(String.format("failed processing %s%n", path.getAbsolutePath()));
+        logger.error(String.format("failed processing %s%n%s", path.getAbsolutePath(), exception.getMessage()));
         exception.printStackTrace();
         continue;
       }

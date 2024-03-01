@@ -7,7 +7,7 @@ public class Constant {
   public static final String INSIGNIFICANT_METH_REF = "InsiginificantMethodRef";
   public static int SIGNIFICANCE_THRESHOLD = 60;
 
-  public static int CLASS_THRESHOLD = 100;
+//  public static int CLASS_THRESHOLD = 100;
 
 
 }

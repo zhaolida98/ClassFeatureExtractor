@@ -6,6 +6,7 @@ import static utils.Constant.INSIGNIFICANT_METH_REF;
 import static utils.Constant.SELF_LOOP_REF;
 
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
@@ -35,6 +36,9 @@ public class ClassHashSetStrategy implements Strategy{
   @Override
   public JsonObject execute(File path) {
     ASTNode astNode = getFileAST(path);
+    if (astNode == null) {
+      return null;
+    }
     resolvedAST = resolveAST(astNode);
     JsonObject jsonObject = toJsonObject(path);
     if (paramManager.isPrintTree()) {
@@ -79,10 +83,23 @@ public class ClassHashSetStrategy implements Strategy{
     List<ASTClassNode> classNodeList = extractClassNode(astNode);
     for (ASTClassNode cn : classNodeList) {
       if (cn.isSignificant()) {
-        resolvedAST.add(methodLinker(cn));
+        ASTNode tmpClassNode = methodLinker(cn);
+        if (!(cn.getParent().getNode() instanceof ClassOrInterfaceDeclaration)) {
+          resolvedAST.add(tmpClassNode);
+        }
       }
     }
-    return resolvedAST;
+    // the children of parent nodes has been removed when resolve method link
+    // restore the class link after method link resolving
+    // only top level class is listed alone.
+    for (ASTClassNode cn : classNodeList) {
+      if (cn.getParent().getNode() instanceof ClassOrInterfaceDeclaration) {
+        if (cn.isSignificant()) {
+          cn.getParent().addChildren(cn);
+        }
+      }
+    }
+      return resolvedAST;
   }
 
   public List<ASTClassNode> extractClassNode(ASTNode astNode) {
@@ -108,7 +125,7 @@ public class ClassHashSetStrategy implements Strategy{
     for (ASTMethodNode methodNode : methodList) {
       astClassNode.getMethodNodeMap().put(methodNode.getName(), methodNode);
     }
-    astClassNode.getComplexity();
+//    astClassNode.getComplexity();
     this.classList.add(astClassNode);
   }
 
